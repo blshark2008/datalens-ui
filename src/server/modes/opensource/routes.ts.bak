@@ -219,15 +219,11 @@ function getDataLensRoutes({
 
 
 					const result = await usPool.query(
-						`SELECT e.entry_id,
-							encode_id(e.entry_id::bigint) || '-' || regexp_replace(lower(e.name), '[^a-z0-9]+', '-', 'g') AS key,
-							e.name, w.title AS workbook_name, dp.access_level
+						`SELECT e.entry_id, e.key, e.name, dp.access_level
 						 FROM dashboard_permissions dp
 						 JOIN entries e ON e.entry_id = dp.entry_id
-						 LEFT JOIN workbooks w ON e.workbook_id = w.workbook_id
 						 WHERE dp.user_id = $1 AND e.is_deleted = false
-						 ORDER BY e.name
-						`,
+						 ORDER BY e.name`,
 						[userId]
 					);
 					return res.json(result.rows);
@@ -249,7 +245,7 @@ function getDataLensRoutes({
             handler: async (_req: Request, res: Response) => {
                 try {
 					const result = await usPool.query(
-						`SELECT e.entry_id, encode_id(e.entry_id::bigint) || '-' || regexp_replace(lower(COALESCE(w.title || ' - ', ''  ) || e.name), '[^a-z0-9]+', '-', 'g') AS key,
+						`SELECT e.entry_id, e.key,
 								COALESCE(w.title || ' - ', '') || e.name AS name
 						 FROM entries e
 						 LEFT JOIN workbooks w ON e.workbook_id = w.workbook_id

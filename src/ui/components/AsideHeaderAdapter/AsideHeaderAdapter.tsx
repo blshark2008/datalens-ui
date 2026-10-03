@@ -1,6 +1,7 @@
 import React from 'react';
 
-import {CircleQuestion, Gear, Sliders} from '@gravity-ui/icons';
+import {CircleQuestion, Gear, Sliders, FileArrowUp, LayoutCellsLarge} from '@gravity-ui/icons';
+
 import type {AsideHeaderProps, MenuItem, TopAlertProps} from '@gravity-ui/navigation';
 import {AsideHeader, FooterItem} from '@gravity-ui/navigation';
 import type {IconData} from '@gravity-ui/uikit';
@@ -39,6 +40,7 @@ const i18n = I18n.keyset('component.aside-header.view');
 
 const COLLECTIONS_PATH = '/collections';
 const SERVICE_SETTINGS_PATH = '/settings';
+const DATA_LOADER_PATH = '/data-loader';
 
 const FOOTER_ITEM_DEFAULT_SIZE = 18;
 const PROMO_SITE_DOMAIN = 'https://datalens.ru/opensource';
@@ -59,6 +61,8 @@ export type AsideHeaderAdapterProps = {
     logoWrapperRef?: React.RefObject<HTMLAnchorElement>;
     asideRef?: React.RefObject<HTMLDivElement>;
 };
+
+
 
 enum Panel {
     Settings = 'settings',
@@ -119,6 +123,41 @@ export const AsideHeaderAdapter = ({
     const {pathname} = useLocation();
     const isCompact = useSelector(selectAsideHeaderIsCompact);
     const isHidden = useSelector(selectAsideHeaderIsHidden);
+
+	const [userDashboards, setUserDashboards] = React.useState<
+		Array<{entry_id: string; key: string; name: string; access_level: string}>
+	>([]);
+
+
+	React.useEffect(() => {
+		if (!DL.IS_NATIVE_AUTH_ADMIN) {
+			(async () => {
+				try {
+					const usersRes = await fetch('/api/internal/v1/all-users', {
+						credentials: 'include',
+					});
+					if (!usersRes.ok) return;
+					const users = await usersRes.json();
+					const userLogin = (DL.USER as any)?.login;
+					const currentUser = users.find((u: any) => u.login === userLogin);
+					if (!currentUser) return;
+
+					const dashRes = await fetch(
+						`/api/internal/v1/my-dashboards?userId=${currentUser.user_id}`,
+						{credentials: 'include'},
+					);
+					if (!dashRes.ok) return;
+					const data = await dashRes.json();
+					setUserDashboards(data);
+				} catch (e) {
+					console.error('Failed to load dashboards for menu:', e);
+				}
+			})();
+		}
+	}, []);
+	
+	
+	
     const [visiblePanel, setVisiblePanel] = React.useState<Panel>();
     const [currentPopup, setCurrentPopup] = React.useState<PopupName | null>(null);
 
@@ -152,33 +191,75 @@ export const AsideHeaderAdapter = ({
           }
         : undefined;
 
-    const menuItems: MenuItem[] = React.useMemo(
-        () => [
-            {
-                id: 'collections',
-                title: i18n('label_collections'),
-                icon: iconCollection,
-                iconSize: 16,
-                current: pathname.includes(COLLECTIONS_PATH),
-                itemWrapper: (params, makeItem) => {
-                    return getLinkWrapper(makeItem(params), COLLECTIONS_PATH);
-                },
-            },
-            ...(customMenuItems || []),
-            {
-                id: 'settings',
-                title: i18n('switch_service-settings'),
-                icon: Sliders,
-                iconSize: ITEMS_NAVIGATION_DEFAULT_SIZE,
-                current: pathname.includes(SERVICE_SETTINGS_PATH),
-                itemWrapper: (params, makeItem) => {
-                    return getLinkWrapper(makeItem(params), SERVICE_SETTINGS_PATH);
-                },
-            },
-        ],
-        [pathname, customMenuItems],
-    );
+	const menuItems: MenuItem[] = React.useMemo(() => {
+		const isAdmin = DL.IS_NATIVE_AUTH_ADMIN;
 
+		const adminItems: MenuItem[] = [
+			{
+				id: 'collections',
+				title: i18n('label_collections'),
+				icon: LayoutCellsLarge,
+				iconSize: 16,
+				current: pathname.includes(COLLECTIONS_PATH),
+				itemWrapper: (params, makeItem) =>
+					getLinkWrapper(makeItem(params), COLLECTIONS_PATH),
+			},
+			{
+				id: 'data-loader',
+				title: 'Загрузка данных',
+				icon: FileArrowUp,
+				iconSize: ITEMS_NAVIGATION_DEFAULT_SIZE,
+				current: pathname.includes(DATA_LOADER_PATH),
+				itemWrapper: (params, makeItem) =>
+					getLinkWrapper(makeItem(params), DATA_LOADER_PATH),
+			},
+			{
+				id: 'hand-data',
+				title: 'Внесение ручных данных',
+				icon: FileArrowUp,
+				iconSize: ITEMS_NAVIGATION_DEFAULT_SIZE,
+				current: pathname.includes('/hand-data'),
+				itemWrapper: (params, makeItem) =>
+					getLinkWrapper(makeItem(params), '/hand-data'),
+			},
+			{
+				id: 'settings',
+				title: i18n('switch_service-settings'),
+				icon: Sliders,
+				iconSize: ITEMS_NAVIGATION_DEFAULT_SIZE,
+				current: pathname.includes(SERVICE_SETTINGS_PATH),
+				itemWrapper: (params, makeItem) =>
+					getLinkWrapper(makeItem(params), SERVICE_SETTINGS_PATH),
+			},
+		];
+
+		const userItems: MenuItem[] = [
+			{
+				id: 'dashboards-list',
+				title: 'Дашборды',
+				icon: iconCollection,
+				iconSize: 16,
+				current: pathname.includes('/dashboards-list'),
+				itemWrapper: (params, makeItem) =>
+					getLinkWrapper(makeItem(params), '/dashboards-list'),
+			},
+
+			...userDashboards.map<MenuItem>((d) => ({
+				id: `dashboard-${d.entry_id}`,
+				title: d.name,
+				icon: LayoutCellsLarge,
+				iconSize: ITEMS_NAVIGATION_DEFAULT_SIZE,
+				current: pathname === `/${d.key}`,
+				itemWrapper: (params, makeItem) =>
+					getLinkWrapper(makeItem(params), `/${d.key}`),
+			})),
+
+		];
+
+		return isAdmin ? [...adminItems, ...(customMenuItems || [])] : userItems;
+	}, [pathname, customMenuItems, userDashboards]);
+
+	
     const panelItems = React.useMemo(
         () => [
             {

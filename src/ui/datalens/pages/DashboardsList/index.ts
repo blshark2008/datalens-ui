@@ -1,0 +1,1 @@
+export {DashboardsList} from './DashboardsList';

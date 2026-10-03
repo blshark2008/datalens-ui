@@ -3,7 +3,16 @@
   "compilerOptions": {
     "resolveJsonModule": true,
     "outDir": "dist",
-    "target": "es2019"
+    "target": "es2019",
+    "baseUrl": ".",
+    "paths": {
+      "ui/*": [
+        "src/ui/*"
+      ]
+    }
   },
-  "include": ["src", "api"]
+  "include": [
+    "src",
+    "api"
+  ]
 }

@@ -14,6 +14,8 @@ import block from 'bem-cn-lite';
 import {I18n} from 'i18n';
 import memoize from 'lodash/memoize';
 import {NavigationMinimalPlaceSelectQa} from 'shared';
+import {UserRole} from 'shared/components/auth/constants/role';
+
 
 import {CreateMenuValue} from '../Core/CreateEntry/CreateEntry';
 import {PLACE, QUICK_ITEMS} from '../constants';
@@ -25,8 +27,32 @@ const b = block('dl-navigation-base');
 // TODO: Replace icons after the release in the library CHARTS-7528
 import QLChart from '../../../assets/icons/ql-chart.svg';
 
+
 export const getPlacesConfig = memoize(() => {
-    return [
+    const roles = window.DL?.user?.roles || [];
+    const isViewer =
+        roles.includes(UserRole.Viewer) || roles.includes(UserRole.Visitor);
+    const isAdmin = roles.includes(UserRole.Admin);
+
+    if (isViewer && !isAdmin) {
+        return [
+            {
+                place: 'dashboards-list',
+                icon: LayoutCellsLarge,
+                iconClassName: b('sidebar-icon-dashboards'),
+                text: 'Дашборды',
+                buttonText: '',
+                value: CreateMenuValue.Dashboard,
+                displayParentFolder: false,
+                filters: {
+                    ownership: false,
+                    order: false,
+                },
+            },
+        ];
+    }
+
+    const items: PlaceParameterItem[] = [
         {
             place: PLACE.ROOT,
             icon: Folders,
@@ -108,7 +134,26 @@ export const getPlacesConfig = memoize(() => {
             },
         },
     ];
+
+    if (isAdmin) {
+        items.push({
+            place: 'dashboard-permissions',
+            icon: FolderHouse,
+            iconClassName: b('sidebar-icon-permissions'),
+            text: 'Права на дашборды',
+            buttonText: '',
+            value: CreateMenuValue.Folder,
+            displayParentFolder: false,
+            filters: {
+                ownership: false,
+                order: false,
+            },
+        });
+    }
+
+    return items;
 });
+
 
 export const getPlaceConfig = memoize(({place, placesConfig}) => {
     return place

@@ -34,11 +34,6 @@ function getEntryId(str: string): string | null {
     if (isEntryIdResult && str[ENTRY_ID_LENGTH] === ENTRY_SLUG_SEPARATOR) {
         return possibleEntryId;
     }
-    // Support numeric snowflake IDs (13-20 digits) used in open-source PostgreSQL backend
-    const numericMatch = str.match(/^(\d{13,20})(?:-|$)/);
-    if (numericMatch) {
-        return numericMatch[1];
-    }
     return null;
 }
 

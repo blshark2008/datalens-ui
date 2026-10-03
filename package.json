@@ -109,6 +109,7 @@
     "node-cache": "^5.1.2",
     "object-sizeof": "^2.6.5",
     "p-queue": "^6.6.2",
+    "pg": "^8.23.1",
     "qs": "^6.11.2",
     "querystring": "^0.2.0",
     "quickjs-emscripten": "^0.31.0",

@@ -17,7 +17,10 @@ const i18n = I18n.keyset('service-settings.main.view');
 const AppearanceSettings = React.lazy(
     () => import('../../components/AppearanceSettings/AppearanceSettings'),
 );
+
 const UsersList = React.lazy(() => import('../../components/UsersList/UsersList'));
+const LogoSettings = React.lazy(() => import('../../components/LogoSettings/LogoSettings'));
+
 
 const DEFAULT_TABS = isEnabledFeature(Feature.EnableNewServiceSettings)
     ? [
@@ -26,6 +29,7 @@ const DEFAULT_TABS = isEnabledFeature(Feature.EnableNewServiceSettings)
               id: 'appearance',
               title: i18n('section_appearance'),
           },
+          {id: 'logo', title: 'Логотип'},
       ]
     : [
           {
@@ -33,7 +37,10 @@ const DEFAULT_TABS = isEnabledFeature(Feature.EnableNewServiceSettings)
               title: i18n('section_general'),
           },
           {id: 'users', title: i18n('section_users')},
+          {id: 'logo', title: 'Логотип'},
       ];
+
+
 
 export type TabItem = {
     id: string;
@@ -152,8 +159,10 @@ const MainPage = ({
                                 />
                             )}
                         />
-                        <Route exact path={'/settings/users'} component={UsersList} />
-                        {customTabRoutes}
+						<Route exact path={'/settings/users'} component={UsersList} />
+						<Route exact path={'/settings/logo'} component={LogoSettings} />
+						{customTabRoutes}
+
                         <Redirect
                             to={newServiceSettingsEnabled ? '/settings/users' : '/settings/general'}
                         />

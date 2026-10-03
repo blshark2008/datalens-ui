@@ -1,5 +1,8 @@
 import React from 'react';
 
+import {DashboardPermissions} from 'ui/datalens/pages/DashboardPermissions/DashboardPermissions';
+
+
 import {Breadcrumbs} from '@gravity-ui/uikit';
 import block from 'bem-cn-lite';
 import {I18n, i18n as i18nGlobal} from 'i18n';
@@ -54,6 +57,9 @@ const UserProfilePage = () => {
                 className={b('content', {new: isEnabledFeature(Feature.EnableNewServiceSettings)})}
             >
                 <UserProfile userId={userId} />
+				
+				<DashboardPermissions userId={userId} userLogin={userProfile?.login ?? undefined} />
+
             </div>
         </main>
     );

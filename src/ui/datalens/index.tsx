@@ -1,5 +1,7 @@
 import React from 'react';
 import {Route, Switch, Redirect} from 'react-router-dom';
+import {UserRole} from 'shared/components/auth/constants/role';
+
 import {useSelector} from 'react-redux';
 import coreReducers from 'store/reducers';
 import {getIsAsideHeaderEnabled} from 'components/AsideHeaderAdapter';
@@ -20,6 +22,32 @@ import {reducer} from 'ui/units/auth/store/reducers';
 import {useIframeRender} from './hooks';
 import {OPEN_SOURCE_INSTALLATION_INFO} from 'ui/constants/navigation';
 import {chartkitApi} from 'ui/store/toolkit/chartkit/api';
+import {DataLoaderApp} from 'ui/units/data-loader/components/DataLoaderApp/DataLoaderApp';
+import {DashboardsList} from 'ui/datalens/pages/DashboardsList/DashboardsList';
+import {DashboardPermissions} from 'ui/datalens/pages/DashboardPermissions/DashboardPermissions';
+import type {IconData} from '@gravity-ui/uikit';
+
+
+function createIconFromSvg(svgText: string): IconData | undefined {
+    if (!svgText) return undefined;
+    return (props: React.SVGProps<SVGSVGElement>) => {
+        try {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(svgText, 'image/svg+xml');
+            const svgEl = doc.querySelector('svg');
+            if (!svgEl) return null as any;
+            const viewBox = svgEl.getAttribute('viewBox') || '0 0 32 32';
+            return React.createElement('svg', {
+                ...props,
+                viewBox,
+                dangerouslySetInnerHTML: {__html: svgEl.innerHTML},
+            });
+        } catch {
+            return null as any;
+        }
+    };
+}
+
 
 reducerRegistry.register(coreReducers);
 reducerRegistry.register({auth: reducer});
@@ -48,6 +76,11 @@ const AuthPage = React.lazy(
     () => import(/* webpackChunkName: "auth-page" */ './pages/AuthPage/AuthPage'),
 );
 
+	
+const HandDataPage = React.lazy(() => import('./pages/HandDataPage/HandDataPage'));
+	
+	
+	
 const DatalensPageView = () => {
     useClearReloadedQuery();
 
@@ -82,9 +115,10 @@ const DatalensPageView = () => {
                 <Route path="/preview" component={PreviewPage} />
 
                 {/* Prevent attempts to create a standalone (outside of workbook) connection */}
-                <Route path={['/connections/new/:type', '/connections/new']}>
-                    <Redirect to={`/collections${location.search}`} />
-                </Route>
+				<Route path={['/connections/new/:type', '/connections/new']}>
+					<Redirect to={`/collections${location.search}`} />
+				</Route>
+
                 <Route
                     path={[
                         '/connections/:id',
@@ -98,6 +132,14 @@ const DatalensPageView = () => {
 
                 <Route path="/settings" component={ServiceSettings} />
 
+                <Route path="/data-loader" component={DataLoaderApp} />
+
+				<Route path="/hand-data" component={HandDataPage} />
+
+                <Route path="/dashboards-list" component={DashboardsList} />
+                
+                <Route path="/dashboard-permissions" component={DashboardPermissions} />
+
                 <Route path={['/collections']} component={CollectionsNavigtaionPage} />
 
                 <Route exact path={dashAndWizardQLRoutes} component={DashAndWizardQLPages} />
@@ -108,7 +150,13 @@ const DatalensPageView = () => {
                 />
 
                 <Route path="/">
-                    <Redirect to={`/collections${location.search}`} />
+                        <Redirect
+							to={
+								DL.USER?.roles?.includes(UserRole.Viewer)
+									? '/dashboards-list'
+									: `/collections${location.search}`
+							}
+						/>
                 </Route>
 
                 {/* comment till we have main page */}
@@ -126,11 +174,22 @@ const DatalensPage: React.FC = () => {
 
     useIframeRender();
 
+    const customLogoIconSvg = localStorage.getItem('customLogoIcon') || '';
+    const customLogoText = localStorage.getItem('customLogoText') || '';
+    const customInstallationInfo = localStorage.getItem('customLogoInstallation') || '';
+    const customLogoIcon = createIconFromSvg(customLogoIconSvg);
+    const logoTextProps = {
+        installationInfo: customInstallationInfo || OPEN_SOURCE_INSTALLATION_INFO,
+        ...(customLogoText ? {productName: customLogoText} : {}),
+    };
+
+
     if (showMobileHeader) {
         return (
             <MobileHeaderComponent
                 renderContent={() => <DatalensPageView />}
-                logoTextProps={{installationInfo: OPEN_SOURCE_INSTALLATION_INFO}}
+                logoIcon={customLogoIcon}
+                logoTextProps={logoTextProps}
             />
         );
     }
@@ -139,10 +198,12 @@ const DatalensPage: React.FC = () => {
         return (
             <AsideHeaderAdapter
                 renderContent={() => <DatalensPageView />}
-                logoTextProps={{installationInfo: OPEN_SOURCE_INSTALLATION_INFO}}
+                logoIcon={customLogoIcon}
+                logoTextProps={logoTextProps}
             />
         );
     }
+
 
     return <DatalensPageView />;
 };
