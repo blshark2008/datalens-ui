@@ -15,7 +15,8 @@ import './HandDataPage.scss';
 
 const b = block('dl-hand-data-page');
 
-const API_BASE = 'http://localhost:3060/api/v1';
+const API_BASE = '/api/v1';
+
 const toApiName = (n: string) => {
     const s = n.toLowerCase().replace(/[^a-z0-9_]/g, '_');
     return s.startsWith('hand_') ? s : 'hand_' + s;
