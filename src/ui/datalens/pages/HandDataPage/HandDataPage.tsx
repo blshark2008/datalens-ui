@@ -15,15 +15,13 @@ import './HandDataPage.scss';
 
 const b = block('dl-hand-data-page');
 
-const API_BASE = 'http://localhost:3060/api/v1'	;
+const API_BASE = 'http://localhost:3060/api/v1';
 const toApiName = (n: string) => {
     const s = n.toLowerCase().replace(/[^a-z0-9_]/g, '_');
     return s.startsWith('hand_') ? s : 'hand_' + s;
 };
 
 const fromApiName = (n: string) => n.startsWith("hand_") ? n.slice(5) : n;
-
-
 
 const FIELD_TYPES = [
     {value: 'text', content: 'TEXT'},
@@ -81,7 +79,7 @@ function CreateTableDialog({
     open: boolean;
     onClose: () => void;
     onCreated: () => void;
-	connectionId: string;
+    connectionId: string;
 }) {
     const [tableName, setTableName] = useState('');
     const [fields, setFields] = useState<NewFieldDef[]>([
@@ -129,7 +127,7 @@ function CreateTableDialog({
                 method: 'POST',
                 body: JSON.stringify({
                     tableName: name,
-					connectionId: connectionId || undefined,
+                    connectionId: connectionId || undefined,
                     fields: validFields.map((f) => ({
                         name: f.name.trim(),
                         type: f.type,
@@ -219,13 +217,13 @@ function AddFieldDialog({
     open,
     onClose,
     tableName,
-	connectionId,
+    connectionId,
     onAdded,
 }: {
     open: boolean;
     onClose: () => void;
     tableName: string;
-	connectionId: string;
+    connectionId: string;
     onAdded: () => void;
 }) {
     const [fieldName, setFieldName] = useState('');
@@ -255,7 +253,7 @@ function AddFieldDialog({
                     name: fieldName.trim(),
                     type: fieldType,
                     nullable,
-					connectionId: connectionId || undefined,
+                    connectionId: connectionId || undefined,
                 }),
             });
             reset();
@@ -315,7 +313,7 @@ function RowDialog({
     onClose,
     columns,
     tableName,
-	connectionId,
+    connectionId,
     initialData,
     onDone,
 }: {
@@ -323,7 +321,7 @@ function RowDialog({
     onClose: () => void;
     columns: ColumnInfo[];
     tableName: string;
-	connectionId: string;
+    connectionId: string;
     initialData: TableRow | null;
     onDone: () => void;
 }) {
@@ -367,18 +365,18 @@ function RowDialog({
                 }
             });
 
-			const qs = connectionId ? `?connectionId=${connectionId}` : '';
-			if (initialData) {
-				await api(`/hand-tables/${toApiName(tableName)}/data/${initialData.id}${qs}`, {
-					method: 'PUT',
-					body: JSON.stringify(body),
-				});
-			} else {
-				await api(`/hand-tables/${toApiName(tableName)}/data${qs}`, {
-					method: 'POST',
-					body: JSON.stringify(body),
-				});
-			}
+            const qs = connectionId ? `?connectionId=${connectionId}` : '';
+            if (initialData) {
+                await api(`/hand-tables/${toApiName(tableName)}/data/${initialData.id}${qs}`, {
+                    method: 'PUT',
+                    body: JSON.stringify(body),
+                });
+            } else {
+                await api(`/hand-tables/${toApiName(tableName)}/data${qs}`, {
+                    method: 'POST',
+                    body: JSON.stringify(body),
+                });
+            }
             onDone();
             onClose();
         } catch (e: any) {
@@ -401,7 +399,6 @@ function RowDialog({
                             {c.type === 'boolean' ? (
                                 <Select
                                     value={[values[c.name] ?? '']}
-
                                     onUpdate={(v) => handleChange(c.name, v[0])}
                                     options={[
                                         {value: 'true', content: 'true'},
@@ -414,11 +411,10 @@ function RowDialog({
                                     value={values[c.name] ?? ''}
                                     onUpdate={(v) => handleChange(c.name, v)}
                                     placeholder={
-										c.type === 'date' ? 'дд.ММ.ГГГГ' :
-										c.type === 'timestamp' ? 'дд.ММ.ГГГГ ЧЧ:ММ' :
-										c.nullable ? 'NULL если пусто' : 'обязательное'
-									}
-
+                                        c.type === 'date' ? 'дд.ММ.ГГГГ' :
+                                        c.type === 'timestamp' ? 'дд.ММ.ГГГГ ЧЧ:ММ' :
+                                        c.nullable ? 'NULL если пусто' : 'обязательное'
+                                    }
                                 />
                             )}
                         </div>
@@ -448,54 +444,52 @@ export default function HandDataPage() {
     const pageSize = 20;
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
-	const [connections, setConnections] = useState<{entry_id: string; name: string}[]>([]);
+    const [connections, setConnections] = useState<{entry_id: string; name: string}[]>([]);
     const [selectedConnection, setSelectedConnection] = useState<string>('');
-
-	
-	
 
     const [createOpen, setCreateOpen] = useState(false);
     const [addFieldOpen, setAddFieldOpen] = useState(false);
     const [rowDialogOpen, setRowDialogOpen] = useState(false);
     const [editingRow, setEditingRow] = useState<TableRow | null>(null);
 
+    /* connections */
+    const fetchConnections = useCallback(async () => {
+        try {
+            const data = await api<{connections: {entry_id: string; name: string}[]}>('/connections');
+            setConnections(data.connections || []);
+        } catch (e: any) {
+            // молча игнорируем
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchConnections();
+    }, [fetchConnections]);
+
     /* tables list */
     const fetchTables = useCallback(async () => {
+        if (!selectedConnection) return;
         try {
-            const data = await api<{tables: {table_name: string}[]}>('/hand-tables' + (selectedConnection ? `?connectionId=${selectedConnection}` : ''));
+            const data = await api<{tables: {table_name: string}[]}>(`/hand-tables?connectionId=${selectedConnection}`);
             setTables(data.tables.map((t: any) => fromApiName(t.table_name)));
         } catch (e: any) {
             setError(e.message);
         }
     }, [selectedConnection]);
 
-	const fetchConnections = useCallback(async () => {
-		try {
-			const data = await api<{connections: {entry_id: string; name: string}[]}>('/connections');
-			setConnections(data.connections || []);
-		} catch (e: any) {
-			// молча игнорируем — подключения могут быть не настроены
-		}
-	}, []);
-
-	useEffect(() => {
-		fetchConnections();
-	}, [fetchConnections]);
-	
-	
-	
     /* table schema + data */
     const fetchTableData = useCallback(async (name: string, p: number) => {
+        if (!selectedConnection) return;
         setLoading(true);
         setError('');
         try {
-			const qs = selectedConnection ? `?connectionId=${selectedConnection}` : '';
-			const [schema, data] = await Promise.all([
-				api<{columns: {column_name: string; data_type: string; is_nullable: string}[]}>(`/hand-tables/${toApiName(name)}/schema${qs}`),
-				api<{data: TableRow[]; total: number}>(
-					`/hand-tables/${toApiName(name)}/data?page=${p + 1}&perPage=${pageSize}` + (selectedConnection ? `&connectionId=${selectedConnection}` : ''),
-				),
-			]);
+            const qs = `connectionId=${selectedConnection}`;
+            const [schema, data] = await Promise.all([
+                api<{columns: {column_name: string; data_type: string; is_nullable: string}[]}>(`/hand-tables/${toApiName(name)}/schema?${qs}`),
+                api<{data: TableRow[]; total: number}>(
+                    `/hand-tables/${toApiName(name)}/data?page=${p + 1}&perPage=${pageSize}&${qs}`,
+                ),
+            ]);
             setColumns((schema.columns || []).map((c: any) => ({
                 name: c.column_name,
                 type: c.data_type,
@@ -515,10 +509,10 @@ export default function HandDataPage() {
     }, [fetchTables]);
 
     useEffect(() => {
-        if (selectedTable) {
+        if (selectedTable && selectedConnection) {
             fetchTableData(selectedTable, page);
         }
-    }, [selectedTable, page, fetchTableData]);
+    }, [selectedTable, page, fetchTableData, selectedConnection]);
 
     /* handlers */
     const handleSelectTable = (name: string) => {
@@ -538,8 +532,7 @@ export default function HandDataPage() {
             return;
         }
         try {
-            await api(`/hand-tables/${toApiName(name)}` + (selectedConnection ? `?connectionId=${selectedConnection}` : ''), {method: 'DELETE'});
-
+            await api(`/hand-tables/${toApiName(name)}?connectionId=${selectedConnection}`, {method: 'DELETE'});
             if (selectedTable === name) {
                 handleBack();
             } else {
@@ -556,10 +549,9 @@ export default function HandDataPage() {
             return;
         }
         try {
-			await api(`/hand-tables/${toApiName(selectedTable)}/fields/${fieldName}` + (selectedConnection ? `?connectionId=${selectedConnection}` : ''), {
-				method: 'DELETE',
-			});
-
+            await api(`/hand-tables/${toApiName(selectedTable)}/fields/${fieldName}?connectionId=${selectedConnection}`, {
+                method: 'DELETE',
+            });
             fetchTableData(selectedTable, page);
         } catch (e: any) {
             setError(e.message);
@@ -570,10 +562,9 @@ export default function HandDataPage() {
         if (!selectedTable) return;
         if (!confirm('Удалить строку?')) return;
         try {
-			await api(`/hand-tables/${toApiName(selectedTable)}/data/${rowId}` + (selectedConnection ? `?connectionId=${selectedConnection}` : ''), {
-				method: 'DELETE',
-			});
-
+            await api(`/hand-tables/${toApiName(selectedTable)}/data/${rowId}?connectionId=${selectedConnection}`, {
+                method: 'DELETE',
+            });
             fetchTableData(selectedTable, page);
         } catch (e: any) {
             setError(e.message);
@@ -596,6 +587,14 @@ export default function HandDataPage() {
         }
     };
 
+    const handleSelectConnection = (val: string) => {
+        setSelectedConnection(val);
+        setSelectedTable(null);
+        setColumns([]);
+        setRows([]);
+        setTables([]);
+    };
+
     const totalPages = Math.ceil(total / pageSize);
 
     /* render */
@@ -604,74 +603,77 @@ export default function HandDataPage() {
             <div className={b()}>
                 <div className={b('header')}>
                     <h2 className={b('title')}>Внесение ручных данных</h2>
-                    <Button view="action" onClick={() => setCreateOpen(true)}>
-                        <Icon data={Plus} /> Создать таблицу
-                    </Button>
-
-
-					{connections.length > 0 ? (
-						<Select
-							value={selectedConnection ? [selectedConnection] : []}
-							onUpdate={(v) => {
-								setSelectedConnection(v[0] || '');
-								fetchTables();
-							}}
-							options={connections.map((c) => ({value: c.entry_id, content: c.name}))}
-							placeholder="database_cardio (по умолчанию)"
-							width="max"
-						/>
-					) : (
-						<Text color="warning">
-							Подключения не найдены. Таблицы будут созданы в database_cardio.
-							Создайте PostgreSQL-подключение в DataLens, чтобы выбрать другую базу.
-						</Text>
-					)}
-
-
-
-
                 </div>
+
+                <div className={b('section')}>
+                    <div className={b('form-row')}>
+                        <label className={b('form-label')}>Подключение</label>
+                        {connections.length > 0 ? (
+                            <Select
+                                value={selectedConnection ? [selectedConnection] : []}
+                                onUpdate={(v) => handleSelectConnection(v[0] || '')}
+                                options={connections.map((c) => ({value: c.entry_id, content: c.name}))}
+                                placeholder="Выберите подключение"
+                                width="max"
+                            />
+                        ) : (
+                            <Text color="warning">
+                                Подключения не найдены. Создайте PostgreSQL-подключение в DataLens.
+                            </Text>
+                        )}
+                    </div>
+                </div>
+
+                {selectedConnection && (
+                    <div className={b('header')} style={{marginTop: 16}}>
+                        <Button view="action" onClick={() => setCreateOpen(true)}>
+                            <Icon data={Plus} /> Создать таблицу
+                        </Button>
+                    </div>
+                )}
 
                 {error && <Text color="danger">{error}</Text>}
 
-                <div className={b('section')}>
-                    <div className={b('section-title')}>Таблицы ({tables.length})</div>
-                    {tables.length === 0 ? (
-                        <div className={b('empty-state')}>
-                            Нет таблиц. Создайте первую таблицу
-                        </div>
-                    ) : (
-                        <div className={b('table-list')}>
-                            {tables.map((t) => (
-                                <div
-                                    key={t}
-                                    className={b('table-item')}
-                                    onClick={() => handleSelectTable(t)}
-                                >
-                                    <span className={b('table-name')}>{t}</span>
-                                    <div className={b('table-actions')}>
-                                        <Button
-                                            view="flat"
-                                            size="s"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleDeleteTable(t);
-                                            }}
-                                        >
-                                            <Icon data={TrashBin} />
-                                        </Button>
+                {selectedConnection && (
+                    <div className={b('section')}>
+                        <div className={b('section-title')}>Таблицы ({tables.length})</div>
+                        {tables.length === 0 ? (
+                            <div className={b('empty-state')}>
+                                Нет таблиц. Создайте первую таблицу
+                            </div>
+                        ) : (
+                            <div className={b('table-list')}>
+                                {tables.map((t) => (
+                                    <div
+                                        key={t}
+                                        className={b('table-item')}
+                                        onClick={() => handleSelectTable(t)}
+                                    >
+                                        <span className={b('table-name')}>{t}</span>
+                                        <div className={b('table-actions')}>
+                                            <Button
+                                                view="flat"
+                                                size="s"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleDeleteTable(t);
+                                                }}
+                                            >
+                                                <Icon data={TrashBin} />
+                                            </Button>
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 <CreateTableDialog
                     open={createOpen}
                     onClose={() => setCreateOpen(false)}
                     onCreated={fetchTables}
-					connectionId={selectedConnection}
+                    connectionId={selectedConnection}
                 />
             </div>
         );
@@ -808,21 +810,21 @@ export default function HandDataPage() {
             </div>
 
             <AddFieldDialog
-				open={addFieldOpen}
-				onClose={() => setAddFieldOpen(false)}
-				tableName={selectedTable}
-				connectionId={selectedConnection}
-				onAdded={() => fetchTableData(selectedTable, page)}
+                open={addFieldOpen}
+                onClose={() => setAddFieldOpen(false)}
+                tableName={selectedTable}
+                connectionId={selectedConnection}
+                onAdded={() => fetchTableData(selectedTable, page)}
             />
 
             <RowDialog
-				open={rowDialogOpen}
-				onClose={() => setRowDialogOpen(false)}
-				columns={columns}
-				tableName={selectedTable}
-				connectionId={selectedConnection}
-				initialData={editingRow}
-				onDone={onRowDone}
+                open={rowDialogOpen}
+                onClose={() => setRowDialogOpen(false)}
+                columns={columns}
+                tableName={selectedTable}
+                connectionId={selectedConnection}
+                initialData={editingRow}
+                onDone={onRowDone}
             />
         </div>
     );
