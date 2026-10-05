@@ -4,10 +4,11 @@ import block from 'bem-cn-lite';
 
 const b = block('service-settings-logo');
 
-const STORAGE_KEY_ICON = 'customLogoIcon';
-const STORAGE_KEY_TEXT = 'customLogoText';
-const STORAGE_KEY_INSTALLATION = 'customLogoInstallation';
-
+type LogoConfig = {
+    logoText?: string;
+    logoIcon?: string;
+    installationInfo?: string;
+};
 
 export const LogoSettings: React.FC = () => {
     const [logoText, setLogoText] = useState('');
@@ -15,17 +16,17 @@ export const LogoSettings: React.FC = () => {
     const [installationInfo, setInstallationInfo] = useState('');
     const [saved, setSaved] = useState(false);
 
+    useEffect(() => {
+        fetch('/logo-config.json')
+            .then(res => res.ok ? res.json() : ({} as LogoConfig))
+            .then((data: LogoConfig) => {
+                setLogoText(data.logoText || '');
+                setLogoIcon(data.logoIcon || '');
+                setInstallationInfo(data.installationInfo || '');
+            })
+            .catch(() => {});
+    [], []);
 
-	useEffect(() => {
-		fetch('/logo-config.json')
-			.then(res => res.ok ? res.json() : {})
-			.then(data => {
-				setLogoText(data.logoText || '');
-				setLogoIcon(data.logoIcon || '');
-				setInstallationInfo(data.installationInfo || '');
-			})
-			.catch(() => {});
-	}, []);
 
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {

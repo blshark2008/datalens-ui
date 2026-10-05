@@ -185,7 +185,7 @@ const DatalensPage: React.FC = () => {
 	} catch (e) {}
 
 	const customLogoIconSvg = serverLogoConfig.logoIcon || '';
-	const customLogoText = serverLogoText.logoText || '';
+	const customLogoText = serverLogoConfig.logoText || '';
 	const customInstallationInfo = serverLogoConfig.installationInfo || '';
 
 
