@@ -174,9 +174,22 @@ const DatalensPage: React.FC = () => {
 
     useIframeRender();
 
-    const customLogoIconSvg = localStorage.getItem('customLogoIcon') || '';
-    const customLogoText = localStorage.getItem('customLogoText') || '';
-    const customInstallationInfo = localStorage.getItem('customLogoInstallation') || '';
+	let serverLogoConfig = {logoText: '', logoIcon: '', installationInfo: ''};
+	try {
+		const xhr = new XMLHttpRequest();
+		xhr.open('GET', '/logo-config.json', false);
+		xhr.send();
+		if (xhr.status === 200) {
+			serverLogoConfig = JSON.parse(xhr.responseText);
+		}
+	} catch (e) {}
+
+	const customLogoIconSvg = serverLogoConfig.logoIcon || '';
+	const customLogoText = serverLogoText.logoText || '';
+	const customInstallationInfo = serverLogoConfig.installationInfo || '';
+
+
+
     const customLogoIcon = createIconFromSvg(customLogoIconSvg);
     const logoTextProps = {
         installationInfo: customInstallationInfo || OPEN_SOURCE_INSTALLATION_INFO,

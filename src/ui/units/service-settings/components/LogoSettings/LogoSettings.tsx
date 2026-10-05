@@ -15,11 +15,17 @@ export const LogoSettings: React.FC = () => {
     const [installationInfo, setInstallationInfo] = useState('');
     const [saved, setSaved] = useState(false);
 
-    useEffect(() => {
-        setLogoText(localStorage.getItem(STORAGE_KEY_TEXT) || '');
-        setLogoIcon(localStorage.getItem(STORAGE_KEY_ICON) || '');
-        setInstallationInfo(localStorage.getItem(STORAGE_KEY_INSTALLATION) || '');
-    }, []);
+
+	useEffect(() => {
+		fetch('/logo-config.json')
+			.then(res => res.ok ? res.json() : {})
+			.then(data => {
+				setLogoText(data.logoText || '');
+				setLogoIcon(data.logoIcon || '');
+				setInstallationInfo(data.installationInfo || '');
+			})
+			.catch(() => {});
+	}, []);
 
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -32,29 +38,18 @@ export const LogoSettings: React.FC = () => {
         reader.readAsText(file);
     };
 
-    const handleSave = () => {
-        localStorage.setItem(STORAGE_KEY_TEXT, logoText);
-        localStorage.setItem(STORAGE_KEY_ICON, logoIcon);
-        localStorage.setItem(STORAGE_KEY_INSTALLATION, installationInfo);
-        setSaved(true);
+	const handleSave = () => {
+		setSaved(true);
+		setTimeout(() => setSaved(false), 3000);
+	};
 
-        setTimeout(() => {
-            window.location.reload();
-        }, 500);
-    };
 
-    const handleReset = () => {
-        localStorage.removeItem(STORAGE_KEY_TEXT);
-        localStorage.removeItem(STORAGE_KEY_ICON);
-        localStorage.removeItem(STORAGE_KEY_INSTALLATION);
-        setLogoText('');
-        setLogoIcon('');
-        setInstallationInfo('');
 
-        setTimeout(() => {
-            window.location.reload();
-        }, 300);
-    };
+	const handleReset = () => {
+		setLogoText('');
+		setLogoIcon('');
+		setInstallationInfo('');
+	};
 
     return (
         <div className={b()} style={{maxWidth: '500px', padding: '24px'}}>
