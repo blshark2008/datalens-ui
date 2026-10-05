@@ -56,7 +56,7 @@ export const DataLoaderApp: React.FC = () => {
             formData.append("sheet_name", sheetName);
             formData.append("file_type", fileType);
 
-            const resp = await fetch("http://localhost:3042/api/internal/v1/data-loader/upload", {
+            const resp = await fetch("/api/internal/v1/data-loader/upload", {
                 method: "POST",
                 body: formData,
             });
